@@ -18,9 +18,18 @@ class _LocalCsv(_DataSet):
     # pylint: disable=too-many-arguments
     # pylint: disable=duplicate-code
 
+    # Power Query encoding codes
+    _ENCODING_CODES = {
+        "utf-8": 65001,
+        "utf-16": 1200,
+        "windows-1252": 1252,
+        "iso-8859-1": 28591,
+    }
+
     def __init__(self,
                  dashboard,
-                 data_path):
+                 data_path,
+                 encoding = "utf-8"):
 
         # pylint: disable=too-few-public-methods
         # pylint: disable=too-many-locals
@@ -28,8 +37,11 @@ class _LocalCsv(_DataSet):
 
         super().__init__(dashboard,data_path)
 
+        # Resolve encoding to Power Query code
+        self.pq_encoding = self._ENCODING_CODES.get(encoding.lower(), 65001)
+
         # load the dataset as a pandas dataframe
-        self.dataset = pd.read_csv(self.data_path)
+        self.dataset = pd.read_csv(self.data_path, encoding=encoding)
 
         # Build the tmdl file based on the method defined on the parent class
         self._create_tmdl()
@@ -50,7 +62,7 @@ class _LocalCsv(_DataSet):
         with open(self.dataset_file_path, 'a', encoding="utf-8") as file:
             file.write(f'\tpartition {self.dataset_name} = m\n')
             file.write('\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n')
-            file.write(f'\t\t\t\t\tSource = Csv.Document(File.Contents("{self.data_path_reversed}"),[Delimiter=",", Columns={len(self.dataset.columns)}, Encoding=1252, QuoteStyle=QuoteStyle.None]),\n')
+            file.write(f'\t\t\t\t\tSource = Csv.Document(File.Contents("{self.data_path_reversed}"),[Delimiter=",", Columns={len(self.dataset.columns)}, Encoding={self.pq_encoding}, QuoteStyle=QuoteStyle.None]),\n')
             file.write('\t\t\t\t\t#"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),\n')
             file.write(f'\t\t\t\t\t#"Replaced Value" = Table.ReplaceValue(#"Promoted Headers","NA",null,Replacer.ReplaceValue,{{"{ replacement_values  }"}}),\n')
             file.write(f'\t\t\t\t\t#"Changed Type" = Table.TransformColumnTypes(#"Replaced Value",{{  {  formatted_column_details  }   }})\n')
@@ -118,7 +130,8 @@ class _BlobCsv(_DataSet):
                  use_saved_storage_key = False,
                  sas_url = None,
                  storage_account_key = None,
-                 show_warnings = True):
+                 show_warnings = True,
+                 encoding = "utf-8"):
 
         # pylint: disable=too-few-public-methods
         # pylint: disable=too-many-locals
@@ -129,6 +142,9 @@ class _BlobCsv(_DataSet):
         from azure.identity import InteractiveBrowserCredential # pylint: disable=import-error
 
         super().__init__(dashboard,data_path)
+
+        # Resolve encoding to Power Query code
+        self.pq_encoding = _LocalCsv._ENCODING_CODES.get(encoding.lower(), 65001)
 
         # get the account name from the url
         m = re.search("(?<=https://).*(?=\\.blob)", account_url)
@@ -232,7 +248,7 @@ class _BlobCsv(_DataSet):
             file.write(f'\t\t\t\t\tSource = AzureStorage.Blobs("{account_url}"),\n')
             file.write(f'\t\t\t\t\t#"{blob_name}1" = Source{{[Name="{blob_name}"]}}[Data],\n')
             file.write(f'\t\t\t\t\t#"https://{account_name} blob core windows net/{blob_name}/_{data_path.replace(".csv", "")} csv" = #"{blob_name}1"{{[#"Folder Path"="{account_url}/{blob_name}/",Name="{self.data_path}"]}}[Content],\n')
-            file.write(f'\t\t\t\t\t#"Imported CSV" = Csv.Document(#"https://{account_name} blob core windows net/{blob_name}/_{data_path.replace(".csv", "")} csv",[Delimiter=",", Columns={len(self.dataset.columns)}, Encoding=1252, QuoteStyle=QuoteStyle.None]),\n')
+            file.write(f'\t\t\t\t\t#"Imported CSV" = Csv.Document(#"https://{account_name} blob core windows net/{blob_name}/_{data_path.replace(".csv", "")} csv",[Delimiter=",", Columns={len(self.dataset.columns)}, Encoding={self.pq_encoding}, QuoteStyle=QuoteStyle.None]),\n')
             file.write('\t\t\t\t\t#"Promoted Headers" = Table.PromoteHeaders(#"Imported CSV", [PromoteAllScalars=true]),\n')
             file.write(f'\t\t\t\t\t#"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{{ formatted_column_details }}})\n')
             file.write('\t\t\t\tin\n\t\t\t\t\t#"Changed Type"\n\n')
