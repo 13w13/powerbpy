@@ -50,7 +50,14 @@ class _Chart(_Visual):
                  parent_group_id,
                  background_color,
                  background_color_alpha,
-                 alt_text="A chart"):
+                 alt_text="A chart",
+                 show_data_labels=False,
+                 bar_color=None,
+                 legend_var=None,
+                 legend_position="Top",
+                 sort_direction="Descending",
+                 sort_by="Y",
+                 axis_start=None):
 
         '''This function adds a new chart to a page in a power BI dashboard report.
         Parameters
@@ -110,53 +117,28 @@ class _Chart(_Visual):
         # add chart specific sections to the json ------------------------------------------------
 
         ## query -----
-        self.visual_json["visual"]["query"] =  {
-            "queryState": {
-                "Category": {
-                    "projections": [
-                        {
-                            "field": {
-                                "Column": {
-                                    "Expression": {
-                                        "SourceRef": {
-                                            "Entity": data_source
-                                        }
-                                    },
-                                    "Property": x_axis_var
-                                }
-                            },
-                            "queryRef": f"{data_source}.{x_axis_var}",
-                            "nativeQueryRef": x_axis_var,
-                            "active": True
-                        }
-                    ]
-                },
-                "Y": {
-                    "projections": [
-                        {
-                            "field": {
-                                "Aggregation": {
-                                    "Expression": {
-                                        "Column": {
-                                            "Expression": {
-                                                "SourceRef": {
-                                                    "Entity": data_source
-                                                }
-                                            },
-                                            "Property": y_axis_var
-                                        }
-                                    },
-                                    "Function": _AGGREGATION_FUNCTION_CODES.get(y_axis_var_aggregation_type, 0)
-                                }
-                            },
-                            "queryRef": f"{y_axis_var_aggregation_type}({data_source}.{y_axis_var})",
-                            "nativeQueryRef": f"{y_axis_var_aggregation_type} of {y_axis_var}"
-                        }
-                    ]
-                }
+        query_state = {
+            "Category": {
+                "projections": [
+                    {
+                        "field": {
+                            "Column": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Entity": data_source
+                                    }
+                                },
+                                "Property": x_axis_var
+                            }
+                        },
+                        "queryRef": f"{data_source}.{x_axis_var}",
+                        "nativeQueryRef": x_axis_var,
+                        "active": True
+                    }
+                ]
             },
-            "sortDefinition": {
-                "sort": [
+            "Y": {
+                "projections": [
                     {
                         "field": {
                             "Aggregation": {
@@ -173,7 +155,71 @@ class _Chart(_Visual):
                                 "Function": _AGGREGATION_FUNCTION_CODES.get(y_axis_var_aggregation_type, 0)
                             }
                         },
-                        "direction": "Descending"
+                        "queryRef": f"{y_axis_var_aggregation_type}({data_source}.{y_axis_var})",
+                        "nativeQueryRef": f"{y_axis_var_aggregation_type} of {y_axis_var}"
+                    }
+                ]
+            }
+        }
+
+        # F7: Multi-series / legend support (stacked, clustered, line with multiple series)
+        if legend_var is not None:
+            query_state["Series"] = {
+                "projections": [
+                    {
+                        "field": {
+                            "Column": {
+                                "Expression": {
+                                    "SourceRef": {
+                                        "Entity": data_source
+                                    }
+                                },
+                                "Property": legend_var
+                            }
+                        },
+                        "queryRef": f"{data_source}.{legend_var}",
+                        "nativeQueryRef": legend_var,
+                        "active": True
+                    }
+                ]
+            }
+
+        # F12: Sort configuration
+        if sort_by == "Category":
+            sort_field = {
+                "Column": {
+                    "Expression": {
+                        "SourceRef": {
+                            "Entity": data_source
+                        }
+                    },
+                    "Property": x_axis_var
+                }
+            }
+        else:
+            sort_field = {
+                "Aggregation": {
+                    "Expression": {
+                        "Column": {
+                            "Expression": {
+                                "SourceRef": {
+                                    "Entity": data_source
+                                }
+                            },
+                            "Property": y_axis_var
+                        }
+                    },
+                    "Function": _AGGREGATION_FUNCTION_CODES.get(y_axis_var_aggregation_type, 0)
+                }
+            }
+
+        self.visual_json["visual"]["query"] = {
+            "queryState": query_state,
+            "sortDefinition": {
+                "sort": [
+                    {
+                        "field": sort_field,
+                        "direction": sort_direction
                     }
                 ],
                 "isDefaultSort": True
@@ -208,6 +254,75 @@ class _Chart(_Visual):
                     }
                 }
         ]
+
+        # F5: Data labels on bars/columns
+        if show_data_labels:
+            self.visual_json["visual"]["objects"]["labels"] = [
+                {
+                    "properties": {
+                        "show": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": "true"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+
+        # F6: Default bar/column color
+        if bar_color is not None:
+            self.visual_json["visual"]["objects"]["dataPoint"] = [
+                {
+                    "properties": {
+                        "defaultColor": {
+                            "solid": {
+                                "color": {
+                                    "expr": {
+                                        "Literal": {
+                                            "Value": f"'{bar_color}'"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+
+        # F8: Legend configuration (only when multi-series via legend_var)
+        if legend_var is not None:
+            self.visual_json["visual"]["objects"]["legend"] = [
+                {
+                    "properties": {
+                        "show": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": "true"
+                                }
+                            }
+                        },
+                        "position": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": f"'{legend_position}'"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+
+        # F10: Force Y axis start value (e.g. 0)
+        if axis_start is not None:
+            self.visual_json["visual"]["objects"]["valueAxis"][0]["properties"]["start"] = {
+                "expr": {
+                    "Literal": {
+                        "Value": f"{axis_start}D"
+                    }
+                }
+            }
 
         # Write out the new json
         with open(self.visual_json_path, "w", encoding="utf-8") as file:

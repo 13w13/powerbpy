@@ -135,7 +135,14 @@ class _Page:
                  tab_order = -1001,
                  z_position = 6000,
                  parent_group_id = None,
-                 alt_text="A chart"):
+                 alt_text="A chart",
+                 show_data_labels=False,
+                 bar_color=None,
+                 legend_var=None,
+                 legend_position="Top",
+                 sort_direction="Descending",
+                 sort_by="Y",
+                 axis_start=None):
 
         '''Add a bar chart to a page
         Parameters
@@ -198,7 +205,14 @@ class _Page:
                  parent_group_id=parent_group_id,
                  alt_text=alt_text,
                  background_color=background_color,
-                 background_color_alpha=background_color_alpha)
+                 background_color_alpha=background_color_alpha,
+                 show_data_labels=show_data_labels,
+                 bar_color=bar_color,
+                 legend_var=legend_var,
+                 legend_position=legend_position,
+                 sort_direction=sort_direction,
+                 sort_by=sort_by,
+                 axis_start=axis_start)
 
         self.visuals.append(chart)
         return chart
