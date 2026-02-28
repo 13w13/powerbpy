@@ -334,8 +334,8 @@ class _DataSet:
         # pylint: disable=no-member
         created = []
 
-        # Always add a COUNTROWS measure
-        row_measure = "Total Rows"
+        # Always add a COUNTROWS measure (prefixed to avoid model-level name collision)
+        row_measure = f"Total Rows ({self.dataset_name})"
         self.add_measure(row_measure, f"COUNTROWS('{self.dataset_name}')", "#,0")
         created.append(row_measure)
 
@@ -357,9 +357,9 @@ class _DataSet:
             if n_distinct / n_total < 0.5:
                 continue
 
-            # Generate measure name: "Unique {col}" cleaned up
+            # Generate measure name: prefixed with table to avoid model-level collision
             clean = col.replace("_", " ").strip()
-            measure_name = f"Unique {clean}"
+            measure_name = f"Unique {clean} ({self.dataset_name})"
 
             self.add_measure(
                 measure_name,
