@@ -640,9 +640,14 @@ class Dashboard:
                          to_column,
                          from_cardinality="one",
                          to_cardinality="many",
-                         cross_filter="oneDirection"):
+                         cross_filter=None):
 
         '''Add a relationship between two tables in the semantic model.
+
+        In TMDL, fromColumn = many side (fact), toColumn = one side (dimension).
+        This method accepts from_table as the "one" side (dimension) and
+        to_table as the "many" side (fact) by default, and swaps them
+        internally to match PBI TMDL convention.
 
         Parameters
         ----------
@@ -659,7 +664,8 @@ class Dashboard:
         to_cardinality : str, optional
             Cardinality of to_table side: "one" or "many". Default "many".
         cross_filter : str, optional
-            Cross-filtering behavior: "oneDirection" or "bothDirections". Default "oneDirection".
+            Cross-filtering behavior: "oneDirection" or "bothDirections".
+            Default None (PBI infers oneDirection).
 
         Examples
         --------
@@ -668,32 +674,38 @@ class Dashboard:
 
         rel_id = str(uuid.uuid4())
 
-        rel_block = (
-            f"\nrelationship {rel_id}\n"
-            f"\tfromColumn: {from_table}.{from_column}\n"
-            f"\ttoColumn: {to_table}.{to_column}\n"
-            f"\tfromCardinality: {from_cardinality}\n"
-            f"\ttoCardinality: {to_cardinality}\n"
-            f"\tcrossFilteringBehavior: {cross_filter}\n"
-        )
-
-        # Read model.tmdl, insert relationship before first "ref table" line
-        with open(self.model_path, "r", encoding="utf-8") as file:
-            lines = file.readlines()
-
-        insert_idx = None
-        for i, line in enumerate(lines):
-            if line.strip().startswith("ref table"):
-                insert_idx = i
-                break
-
-        if insert_idx is not None:
-            lines.insert(insert_idx, rel_block + "\n")
+        # PBI TMDL convention: fromColumn = many side, toColumn = one side.
+        # User API default: from_table = one (dim), to_table = many (fact).
+        # Swap from↔to in TMDL when user passes one→many (default).
+        if from_cardinality == "one" and to_cardinality == "many":
+            tmdl_from = f"{to_table}.{to_column}"
+            tmdl_to = f"{from_table}.{from_column}"
+        elif from_cardinality == "many" and to_cardinality == "one":
+            tmdl_from = f"{from_table}.{from_column}"
+            tmdl_to = f"{to_table}.{to_column}"
         else:
-            lines.append(rel_block)
+            tmdl_from = f"{from_table}.{from_column}"
+            tmdl_to = f"{to_table}.{to_column}"
 
-        with open(self.model_path, "w", encoding="utf-8") as file:
-            file.writelines(lines)
+        rel_block = f"relationship {rel_id}\n"
+        rel_block += f"\tfromColumn: {tmdl_from}\n"
+        rel_block += f"\ttoColumn: {tmdl_to}\n"
+
+        # Only write non-default properties
+        if from_cardinality == "one" and to_cardinality == "one":
+            rel_block += "\tfromCardinality: one\n"
+            rel_block += "\ttoCardinality: one\n"
+        elif from_cardinality == "many" and to_cardinality == "many":
+            rel_block += "\tfromCardinality: many\n"
+            rel_block += "\ttoCardinality: many\n"
+
+        if cross_filter is not None:
+            rel_block += f"\tcrossFilteringBehavior: {cross_filter}\n"
+
+        # Write to relationships.tmdl (separate file, PBI Desktop convention)
+        rel_path = os.path.join(os.path.dirname(self.model_path), "relationships.tmdl")
+        with open(rel_path, "a", encoding="utf-8") as file:
+            file.write(rel_block + "\n")
 
 
     def set_theme(self,
