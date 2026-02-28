@@ -456,7 +456,7 @@ class Dashboard:
                  use_saved_storage_key = False,
                  sas_url = None,
                  storage_account_key = None,
-                 warnings = True,
+                 show_warnings = True,
                  encoding = "utf-8"):
 
         '''Add a csv file stored in a ADLS blob container to a dashboard
@@ -517,7 +517,7 @@ class Dashboard:
                  use_saved_storage_key = use_saved_storage_key,
                  sas_url = sas_url,
                  storage_account_key = storage_account_key,
-                 warnings = warnings,
+                 show_warnings = show_warnings,
                  encoding = encoding)
 
         self.datasets.append(dataset)

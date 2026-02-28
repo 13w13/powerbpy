@@ -11,20 +11,20 @@ import pandas as pd # pylint: disable=import-error
 
 from powerbpy.data_set import _DataSet
 
+# Power Query encoding codes — used by both _LocalCsv and _BlobCsv
+_ENCODING_CODES = {
+    "utf-8": 65001,
+    "utf-16": 1200,
+    "windows-1252": 1252,
+    "iso-8859-1": 28591,
+}
+
 class _LocalCsv(_DataSet):
 
     # pylint: disable=too-few-public-methods
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-arguments
     # pylint: disable=duplicate-code
-
-    # Power Query encoding codes
-    _ENCODING_CODES = {
-        "utf-8": 65001,
-        "utf-16": 1200,
-        "windows-1252": 1252,
-        "iso-8859-1": 28591,
-    }
 
     def __init__(self,
                  dashboard,
@@ -38,7 +38,7 @@ class _LocalCsv(_DataSet):
         super().__init__(dashboard,data_path)
 
         # Resolve encoding to Power Query code
-        self.pq_encoding = self._ENCODING_CODES.get(encoding.lower(), 65001)
+        self.pq_encoding = _ENCODING_CODES.get(encoding.lower(), 65001)
 
         # load the dataset as a pandas dataframe
         self.dataset = pd.read_csv(self.data_path, encoding=encoding)
@@ -144,7 +144,7 @@ class _BlobCsv(_DataSet):
         super().__init__(dashboard,data_path)
 
         # Resolve encoding to Power Query code
-        self.pq_encoding = _LocalCsv._ENCODING_CODES.get(encoding.lower(), 65001)
+        self.pq_encoding = _ENCODING_CODES.get(encoding.lower(), 65001)
 
         # get the account name from the url
         m = re.search("(?<=https://).*(?=\\.blob)", account_url)
