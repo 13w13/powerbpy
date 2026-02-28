@@ -27,7 +27,12 @@ class _Visual:
                   parent_group_id = None,
                   alt_text="A generic visual",
                   background_color=None,
-                  background_color_alpha=None):
+                  background_color_alpha=None,
+                  title_font_color=None,
+                  title_font_family=None,
+                  title_bold=None,
+                  border_color=None,
+                  border_width=None):
 
         #from powerbpy.page import _Page
 
@@ -163,6 +168,75 @@ class _Visual:
                                 }
                             }
                         }
+
+            # F11: Title font color
+            if title_font_color is not None:
+                self.visual_json["visual"]["visualContainerObjects"]["title"][0]["properties"]["fontColor"] = {
+                    "solid": {
+                        "color": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": f"'{title_font_color}'"
+                                }
+                            }
+                        }
+                    }
+                }
+
+            # F11: Title font family
+            if title_font_family is not None:
+                self.visual_json["visual"]["visualContainerObjects"]["title"][0]["properties"]["fontFamily"] = {
+                    "expr": {
+                        "Literal": {
+                            "Value": f"'{title_font_family}'"
+                        }
+                    }
+                }
+
+            # F11: Title bold
+            if title_bold is not None:
+                self.visual_json["visual"]["visualContainerObjects"]["title"][0]["properties"]["bold"] = {
+                    "expr": {
+                        "Literal": {
+                            "Value": "true" if title_bold else "false"
+                        }
+                    }
+                }
+
+        # F13: Visual border
+        if border_color is not None or border_width is not None:
+            border_props = {
+                "show": {
+                    "expr": {
+                        "Literal": {
+                            "Value": "true"
+                        }
+                    }
+                }
+            }
+            if border_color is not None:
+                border_props["color"] = {
+                    "solid": {
+                        "color": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": f"'{border_color}'"
+                                }
+                            }
+                        }
+                    }
+                }
+            if border_width is not None:
+                border_props["width"] = {
+                    "expr": {
+                        "Literal": {
+                            "Value": f"{border_width}D"
+                        }
+                    }
+                }
+            self.visual_json["visual"]["visualContainerObjects"]["border"] = [
+                {"properties": border_props}
+            ]
 
         # add a background color if the user provided one
         if self.background_color is not None:

@@ -57,7 +57,12 @@ class _Chart(_Visual):
                  legend_position="Top",
                  sort_direction="Descending",
                  sort_by="Y",
-                 axis_start=None):
+                 axis_start=None,
+                 title_font_color=None,
+                 title_font_family=None,
+                 title_bold=None,
+                 border_color=None,
+                 border_width=None):
 
         '''This function adds a new chart to a page in a power BI dashboard report.
         Parameters
@@ -109,7 +114,12 @@ class _Chart(_Visual):
                   parent_group_id=parent_group_id,
                   alt_text=alt_text,
                   background_color=background_color,
-                  background_color_alpha=background_color_alpha)
+                  background_color_alpha=background_color_alpha,
+                  title_font_color=title_font_color,
+                  title_font_family=title_font_family,
+                  title_bold=title_bold,
+                  border_color=border_color,
+                  border_width=border_width)
 
         # Update the visual type
         self.visual_json["visual"]["visualType"] = chart_type

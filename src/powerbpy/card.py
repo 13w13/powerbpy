@@ -35,7 +35,12 @@ class _Card(_Visual):
              background_color,
              background_color_alpha,
              parent_group_id,
-             alt_text):
+             alt_text,
+             title_font_color=None,
+             title_font_family=None,
+             title_bold=None,
+             border_color=None,
+             border_width=None):
 
         '''Add a card to a page
 
@@ -90,7 +95,12 @@ class _Card(_Visual):
                   background_color=background_color,
                   background_color_alpha=background_color_alpha,
                   parent_group_id=parent_group_id,
-                  alt_text=alt_text)
+                  alt_text=alt_text,
+                  title_font_color=title_font_color,
+                  title_font_family=title_font_family,
+                  title_bold=title_bold,
+                  border_color=border_color,
+                  border_width=border_width)
 
         # Update the visual type
         self.visual_json["visual"]["visualType"] = "card"

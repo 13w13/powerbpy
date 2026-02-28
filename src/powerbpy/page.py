@@ -142,7 +142,12 @@ class _Page:
                  legend_position="Top",
                  sort_direction="Descending",
                  sort_by="Y",
-                 axis_start=None):
+                 axis_start=None,
+                 title_font_color=None,
+                 title_font_family=None,
+                 title_bold=None,
+                 border_color=None,
+                 border_width=None):
 
         '''Add a bar chart to a page
         Parameters
@@ -212,7 +217,12 @@ class _Page:
                  legend_position=legend_position,
                  sort_direction=sort_direction,
                  sort_by=sort_by,
-                 axis_start=axis_start)
+                 axis_start=axis_start,
+                 title_font_color=title_font_color,
+                 title_font_family=title_font_family,
+                 title_bold=title_bold,
+                 border_color=border_color,
+                 border_width=border_width)
 
         self.visuals.append(chart)
         return chart
@@ -477,7 +487,12 @@ class _Page:
              background_color = None,
              background_color_alpha = None,
              parent_group_id = None,
-             alt_text="A card"):
+             alt_text="A card",
+             title_font_color=None,
+             title_font_family=None,
+             title_bold=None,
+             border_color=None,
+             border_width=None):
 
         '''Add a card to a page
 
@@ -542,7 +557,12 @@ class _Page:
              background_color = background_color,
              background_color_alpha=background_color_alpha,
              parent_group_id = parent_group_id,
-             alt_text=alt_text)
+             alt_text=alt_text,
+             title_font_color=title_font_color,
+             title_font_family=title_font_family,
+             title_bold=title_bold,
+             border_color=border_color,
+             border_width=border_width)
 
         self.visuals.append(card)
         return card
