@@ -285,13 +285,21 @@ class _Visual:
         if self.parent_group_id is not None:
             self.visual_json["parentGroupName"] = self.parent_group_id
 
-        # Custom tooltip page reference — DEFERRED
-        # tooltipPage is NOT a valid property inside visual{} per schema 1.3.0.
-        # Correct approach needs reverse-engineering via visualContainerObjects.visualTooltip.
-        # Keeping param in signature for future use but not writing to JSON.
-        # if tooltip_page is not None:
-        #     page_id = tooltip_page.page_id if hasattr(tooltip_page, 'page_id') else tooltip_page
-        #     self.visual_json["visual"]["tooltipPage"] = {
-        #         "pageName": page_id,
-        #         "reportPageName": page_id
-        #     }
+        # Custom tooltip page reference
+        # Binding goes in visualContainerObjects.visualTooltip (NOT visual.tooltipPage)
+        # Structure reverse-engineered from PBI Desktop .pbip output
+        if tooltip_page is not None:
+            page_id = tooltip_page.page_id if hasattr(tooltip_page, 'page_id') else tooltip_page
+            self.visual_json["visual"]["visualContainerObjects"]["visualTooltip"] = [
+                {
+                    "properties": {
+                        "section": {
+                            "expr": {
+                                "Literal": {
+                                    "Value": f"'{page_id}'"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]

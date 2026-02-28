@@ -3,12 +3,13 @@
 '''
 
 import json
+import uuid
 
 from powerbpy.visual import _Visual
 
 
 class _Kpi(_Visual):
-    """KPI visual — indicator value + optional goal + optional trend axis."""
+    """KPI visual — indicator value + optional goal + optional trend line."""
 
     # pylint: disable=too-few-public-methods
     # pylint: disable=too-many-locals
@@ -62,21 +63,23 @@ class _Kpi(_Visual):
         # Set visual type
         self.visual_json["visual"]["visualType"] = "kpi"
 
-        # Build query — KPI uses "Indicator" + "Goal" + "TrendAxis"
+        # Build query — KPI uses "Indicator" + "Goal" + "TrendLine"
+        # Role names reverse-engineered from PBI Desktop .pbip output
+        indicator_field = {
+            "Measure": {
+                "Expression": {
+                    "SourceRef": {
+                        "Entity": data_source
+                    }
+                },
+                "Property": measure_name
+            }
+        }
         query_state = {
             "Indicator": {
                 "projections": [
                     {
-                        "field": {
-                            "Measure": {
-                                "Expression": {
-                                    "SourceRef": {
-                                        "Entity": data_source
-                                    }
-                                },
-                                "Property": measure_name
-                            }
-                        },
+                        "field": indicator_field,
                         "queryRef": f"{data_source}.{measure_name}",
                         "nativeQueryRef": measure_name
                     }
@@ -84,54 +87,77 @@ class _Kpi(_Visual):
             }
         }
 
+        # filterConfig — PBI requires an Advanced filter entry per field
+        filters = [
+            {
+                "name": uuid.uuid4().hex[:20],
+                "field": indicator_field,
+                "type": "Advanced"
+            }
+        ]
+
         # Optional Goal (target measure)
         if goal_measure is not None:
+            goal_field = {
+                "Measure": {
+                    "Expression": {
+                        "SourceRef": {
+                            "Entity": data_source
+                        }
+                    },
+                    "Property": goal_measure
+                }
+            }
             query_state["Goal"] = {
                 "projections": [
                     {
-                        "field": {
-                            "Measure": {
-                                "Expression": {
-                                    "SourceRef": {
-                                        "Entity": data_source
-                                    }
-                                },
-                                "Property": goal_measure
-                            }
-                        },
+                        "field": goal_field,
                         "queryRef": f"{data_source}.{goal_measure}",
                         "nativeQueryRef": goal_measure
                     }
                 ]
             }
+            filters.append({
+                "name": uuid.uuid4().hex[:20],
+                "field": goal_field,
+                "type": "Advanced"
+            })
 
-        # Optional TrendAxis (date/time column)
+        # Optional TrendLine (date/time column)
         if trend_column is not None:
-            query_state["TrendAxis"] = {
+            trend_field = {
+                "Column": {
+                    "Expression": {
+                        "SourceRef": {
+                            "Entity": data_source
+                        }
+                    },
+                    "Property": trend_column
+                }
+            }
+            query_state["TrendLine"] = {
                 "projections": [
                     {
-                        "field": {
-                            "Column": {
-                                "Expression": {
-                                    "SourceRef": {
-                                        "Entity": data_source
-                                    }
-                                },
-                                "Property": trend_column
-                            }
-                        },
+                        "field": trend_field,
                         "queryRef": f"{data_source}.{trend_column}",
-                        "nativeQueryRef": trend_column,
-                        "active": True
+                        "nativeQueryRef": trend_column
                     }
                 ]
             }
+            filters.append({
+                "name": uuid.uuid4().hex[:20],
+                "field": trend_field,
+                "type": "Advanced"
+            })
 
+        # KPI has NO sortDefinition (unlike other visuals)
         self.visual_json["visual"]["query"] = {
-            "queryState": query_state,
-            "sortDefinition": {
-                "isDefaultSort": True
-            }
+            "queryState": query_state
+        }
+
+        # Add filterConfig
+        self.visual_json["filterConfig"] = {
+            "filters": filters
         }
 
         # Write out the json

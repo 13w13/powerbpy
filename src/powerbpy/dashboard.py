@@ -828,20 +828,19 @@ class Dashboard:
 
         page = _Page(self, page_id=page_id)
 
-        # Create tooltip page json (hidden + tooltip binding)
+        # Create tooltip page json
+        # Structure reverse-engineered from PBI Desktop .pbip output:
+        #   - "type": "Tooltip" (not "tooltip": true, not pageBinding)
+        #   - "displayOption": "ActualSize"
+        #   - No visibility or objects needed
         page_json = {
-            "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.2.0/schema.json",
+            "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
             "name": page_id,
             "displayName": page_name,
-            "displayOption": "FitToPage",
+            "displayOption": "ActualSize",
             "height": height,
             "width": width,
-            "visibility": "HiddenInViewMode",
-            "pageBinding": {
-                "type": "Tooltip",
-                "name": page_id
-            },
-            "objects": {}
+            "type": "Tooltip"
         }
 
         with open(page.page_json_path, "w", encoding="utf-8") as file:
