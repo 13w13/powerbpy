@@ -62,7 +62,8 @@ class _Chart(_Visual):
                  title_font_family=None,
                  title_bold=None,
                  border_color=None,
-                 border_width=None):
+                 border_width=None,
+                 tooltip_page=None):
 
         '''This function adds a new chart to a page in a power BI dashboard report.
         Parameters
@@ -119,7 +120,8 @@ class _Chart(_Visual):
                   title_font_family=title_font_family,
                   title_bold=title_bold,
                   border_color=border_color,
-                  border_width=border_width)
+                  border_width=border_width,
+                  tooltip_page=tooltip_page)
 
         # Update the visual type
         self.visual_json["visual"]["visualType"] = chart_type

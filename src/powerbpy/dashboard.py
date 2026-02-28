@@ -631,3 +631,221 @@ class Dashboard:
 
         else:
             print("Measures not found")
+
+
+    def add_relationship(self,
+                         from_table,
+                         from_column,
+                         to_table,
+                         to_column,
+                         from_cardinality="one",
+                         to_cardinality="many",
+                         cross_filter="oneDirection"):
+
+        '''Add a relationship between two tables in the semantic model.
+
+        Parameters
+        ----------
+        from_table : str
+            The "one" side table name (e.g. dimension table).
+        from_column : str
+            The join column in from_table.
+        to_table : str
+            The "many" side table name (e.g. fact table).
+        to_column : str
+            The join column in to_table.
+        from_cardinality : str, optional
+            Cardinality of from_table side: "one" or "many". Default "one".
+        to_cardinality : str, optional
+            Cardinality of to_table side: "one" or "many". Default "many".
+        cross_filter : str, optional
+            Cross-filtering behavior: "oneDirection" or "bothDirections". Default "oneDirection".
+
+        Examples
+        --------
+        >>> db.add_relationship("dim_location", "location_id", "fact_sessions", "location_id")
+        '''
+
+        rel_id = str(uuid.uuid4())
+
+        rel_block = (
+            f"\nrelationship {rel_id}\n"
+            f"\tfromColumn: {from_table}.{from_column}\n"
+            f"\ttoColumn: {to_table}.{to_column}\n"
+            f"\tfromCardinality: {from_cardinality}\n"
+            f"\ttoCardinality: {to_cardinality}\n"
+            f"\tcrossFilteringBehavior: {cross_filter}\n"
+        )
+
+        # Read model.tmdl, insert relationship before first "ref table" line
+        with open(self.model_path, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+
+        insert_idx = None
+        for i, line in enumerate(lines):
+            if line.strip().startswith("ref table"):
+                insert_idx = i
+                break
+
+        if insert_idx is not None:
+            lines.insert(insert_idx, rel_block + "\n")
+        else:
+            lines.append(rel_block)
+
+        with open(self.model_path, "w", encoding="utf-8") as file:
+            file.writelines(lines)
+
+
+    def set_theme(self,
+                  name,
+                  data_colors,
+                  foreground="#252423",
+                  background="#FFFFFF",
+                  table_accent=None,
+                  good=None,
+                  bad=None,
+                  neutral=None):
+
+        '''Set a custom color theme for the dashboard.
+
+        Parameters
+        ----------
+        name : str
+            Theme name (e.g. "HI_Theme").
+        data_colors : list of str
+            List of hex color strings for chart data series (e.g. ["#0077C8", "#004F71"]).
+        foreground : str, optional
+            Main text color. Default "#252423".
+        background : str, optional
+            Background color. Default "#FFFFFF".
+        table_accent : str, optional
+            Accent color for table headers. Defaults to first data_color.
+        good : str, optional
+            Color for positive/good values.
+        bad : str, optional
+            Color for negative/bad values.
+        neutral : str, optional
+            Color for neutral values.
+
+        Examples
+        --------
+        >>> db.set_theme("HI_Theme", ["#0077C8", "#004F71", "#5BC2E7", "#007678"])
+        '''
+
+        if table_accent is None:
+            table_accent = data_colors[0]
+
+        theme = {
+            "name": name,
+            "dataColors": data_colors,
+            "foreground": foreground,
+            "background": background,
+            "tableAccent": table_accent,
+        }
+        if good is not None:
+            theme["good"] = good
+        if bad is not None:
+            theme["bad"] = bad
+        if neutral is not None:
+            theme["neutral"] = neutral
+
+        # Write theme JSON
+        themes_dir = os.path.join(
+            self.report_folder_path,
+            "StaticResources", "SharedResources", "BaseThemes"
+        )
+        os.makedirs(themes_dir, exist_ok=True)
+
+        theme_path = os.path.join(themes_dir, f"{name}.json")
+        with open(theme_path, "w", encoding="utf-8") as file:
+            json.dump(theme, file, indent=2)
+
+        # Update report.json
+        with open(self.report_json_path, "r", encoding="utf-8") as file:
+            report = json.load(file)
+
+        report["themeCollection"]["baseTheme"]["name"] = name
+
+        # Update resourcePackages — find SharedResources package
+        for pkg in report.get("resourcePackages", []):
+            if pkg.get("type") == "SharedResources":
+                # Replace or add the BaseTheme item
+                pkg["items"] = [
+                    item for item in pkg.get("items", [])
+                    if item.get("type") != "BaseTheme"
+                ]
+                pkg["items"].insert(0, {
+                    "name": name,
+                    "path": f"BaseThemes/{name}.json",
+                    "type": "BaseTheme"
+                })
+                break
+
+        with open(self.report_json_path, "w", encoding="utf-8") as file:
+            json.dump(report, file, indent=2)
+
+
+    def new_tooltip_page(self,
+                         page_name,
+                         height=240,
+                         width=320):
+
+        '''Create a tooltip page (hidden, small) for custom tooltips.
+
+        Parameters
+        ----------
+        page_name : str
+            Display name for the tooltip page.
+        height : int, optional
+            Tooltip page height in pixels. Default 240.
+        width : int, optional
+            Tooltip page width in pixels. Default 320.
+
+        Returns
+        -------
+        _Page
+            The tooltip page instance. Add visuals to it like any other page.
+
+        Examples
+        --------
+        >>> tp = db.new_tooltip_page("My Tooltip")
+        >>> tp.add_card(visual_id="tip_card", data_source="data", measure_name="Total", ...)
+        '''
+
+        from powerbpy.page import _Page
+
+        # Determine page id
+        with open(self.pages_file_path, 'r', encoding="utf-8") as file:
+            pages_list = json.load(file)
+
+        n_pages = len(pages_list["pageOrder"])
+        page_id = f"page{n_pages + 1}"
+
+        pages_list["pageOrder"].append(page_id)
+
+        with open(self.pages_file_path, 'w', encoding="utf-8") as file:
+            json.dump(pages_list, file, indent=2)
+
+        page = _Page(self, page_id=page_id)
+
+        # Create tooltip page json (hidden + tooltip binding)
+        page_json = {
+            "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.2.0/schema.json",
+            "name": page_id,
+            "displayName": page_name,
+            "displayOption": "FitToPage",
+            "height": height,
+            "width": width,
+            "visibility": "HiddenInViewMode",
+            "pageBinding": {
+                "type": "Tooltip",
+                "name": page_id
+            },
+            "objects": {}
+        }
+
+        with open(page.page_json_path, "w", encoding="utf-8") as file:
+            json.dump(page_json, file, indent=2)
+
+        self.pages.append(page)
+        return page

@@ -297,6 +297,43 @@ class _DataSet:
             file.write(f"\t\tlineageTag: {measure_id}\n\n")
 
 
+    def add_column(self,
+                   name,
+                   expression,
+                   data_type="string",
+                   format_string=None):
+
+        '''Add a DAX calculated column to this dataset's TMDL file.
+
+        Parameters
+        ----------
+        name : str
+            The display name of the column (e.g. "Full Name").
+        expression : str
+            The DAX expression (e.g. "[first_name] & \" \" & [last_name]").
+        data_type : str, optional
+            The data type: "string", "double", or "dateTime". Default "string".
+        format_string : str, optional
+            Power BI format string (e.g. "#,0", "0.00%").
+
+        Examples
+        --------
+        >>> ds.add_column("Full Name", '[first_name] & " " & [last_name]')
+        >>> ds.add_column("Score x2", "[score] * 2", data_type="double", format_string="#,0")
+        '''
+
+        col_id = str(uuid.uuid4())
+        summarize = "sum" if data_type == "double" else "none"
+
+        with open(self.dataset_file_path, 'a', encoding="utf-8") as file:
+            file.write(f"\n\tcolumn '{name}' = {expression}\n")
+            file.write(f"\t\tdataType: {data_type}\n")
+            if format_string is not None:
+                file.write(f"\t\tformatString: {format_string}\n")
+            file.write(f"\t\tlineageTag: {col_id}\n")
+            file.write(f"\t\tsummarizeBy: {summarize}\n\n")
+
+
     # Patterns that indicate a column is a unique identifier / key
     _ID_PATTERNS = re.compile(
         r'(?:^|_)(?:case|beneficiary|bnf|patient|client|household|hh|participant'

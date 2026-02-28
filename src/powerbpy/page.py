@@ -147,7 +147,8 @@ class _Page:
                  title_font_family=None,
                  title_bold=None,
                  border_color=None,
-                 border_width=None):
+                 border_width=None,
+                 tooltip_page=None):
 
         '''Add a bar chart to a page
         Parameters
@@ -222,7 +223,8 @@ class _Page:
                  title_font_family=title_font_family,
                  title_bold=title_bold,
                  border_color=border_color,
-                 border_width=border_width)
+                 border_width=border_width,
+                 tooltip_page=tooltip_page)
 
         self.visuals.append(chart)
         return chart
@@ -1067,3 +1069,231 @@ class _Page:
 
         self.visuals.append(multi_row_card)
         return multi_row_card
+
+
+    # pylint: disable=too-many-arguments
+    def add_kpi(self,
+                *,
+                visual_id,
+                data_source,
+                measure_name,
+                kpi_title=None,
+                goal_measure=None,
+                trend_column=None,
+                x_position,
+                y_position,
+                height,
+                width,
+                background_color=None,
+                background_color_alpha=None,
+                tab_order=-1001,
+                z_position=6000,
+                parent_group_id=None,
+                alt_text="A KPI",
+                title_font_color=None,
+                title_font_family=None,
+                title_bold=None,
+                border_color=None,
+                border_width=None):
+
+        '''Add a KPI visual to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the KPI.
+        data_source : str
+            Name of the dataset.
+        measure_name : str
+            The indicator measure (DAX measure name).
+        kpi_title : str, optional
+            Title displayed above the KPI.
+        goal_measure : str, optional
+            Goal/target measure name.
+        trend_column : str, optional
+            Date/time column for the trend sparkline.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.kpi import _Kpi
+
+        kpi = _Kpi(self,
+                   visual_id=visual_id,
+                   data_source=data_source,
+                   visual_title=kpi_title,
+                   measure_name=measure_name,
+                   goal_measure=goal_measure,
+                   trend_column=trend_column,
+                   x_position=x_position,
+                   y_position=y_position,
+                   height=height,
+                   width=width,
+                   tab_order=tab_order,
+                   z_position=z_position,
+                   parent_group_id=parent_group_id,
+                   alt_text=alt_text,
+                   background_color=background_color,
+                   background_color_alpha=background_color_alpha,
+                   title_font_color=title_font_color,
+                   title_font_family=title_font_family,
+                   title_bold=title_bold,
+                   border_color=border_color,
+                   border_width=border_width)
+
+        self.visuals.append(kpi)
+        return kpi
+
+
+    # pylint: disable=too-many-arguments
+    def add_scatter(self,
+                    *,
+                    visual_id,
+                    data_source,
+                    x_measure,
+                    y_measure,
+                    scatter_title=None,
+                    category_column=None,
+                    size_measure=None,
+                    x_position,
+                    y_position,
+                    height,
+                    width,
+                    background_color=None,
+                    background_color_alpha=None,
+                    tab_order=-1001,
+                    z_position=6000,
+                    parent_group_id=None,
+                    alt_text="A scatter chart",
+                    title_font_color=None,
+                    title_font_family=None,
+                    title_bold=None,
+                    border_color=None,
+                    border_width=None):
+
+        '''Add a scatter/bubble chart to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the scatter chart.
+        data_source : str
+            Name of the dataset.
+        x_measure : str
+            DAX measure for the X axis.
+        y_measure : str
+            DAX measure for the Y axis.
+        scatter_title : str, optional
+            Title displayed above the chart.
+        category_column : str, optional
+            Column that identifies each point/bubble.
+        size_measure : str, optional
+            DAX measure for bubble size.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.scatter import _Scatter
+
+        scatter = _Scatter(self,
+                           visual_id=visual_id,
+                           data_source=data_source,
+                           visual_title=scatter_title,
+                           x_measure=x_measure,
+                           y_measure=y_measure,
+                           category_column=category_column,
+                           size_measure=size_measure,
+                           x_position=x_position,
+                           y_position=y_position,
+                           height=height,
+                           width=width,
+                           tab_order=tab_order,
+                           z_position=z_position,
+                           parent_group_id=parent_group_id,
+                           alt_text=alt_text,
+                           background_color=background_color,
+                           background_color_alpha=background_color_alpha,
+                           title_font_color=title_font_color,
+                           title_font_family=title_font_family,
+                           title_bold=title_bold,
+                           border_color=border_color,
+                           border_width=border_width)
+
+        self.visuals.append(scatter)
+        return scatter
+
+
+    # pylint: disable=too-many-arguments
+    def add_matrix(self,
+                   *,
+                   visual_id,
+                   data_source,
+                   rows,
+                   values,
+                   matrix_title=None,
+                   columns=None,
+                   x_position,
+                   y_position,
+                   height,
+                   width,
+                   background_color=None,
+                   background_color_alpha=None,
+                   tab_order=-1001,
+                   z_position=6000,
+                   parent_group_id=None,
+                   alt_text="A matrix",
+                   title_font_color=None,
+                   title_font_family=None,
+                   title_bold=None,
+                   border_color=None,
+                   border_width=None):
+
+        '''Add a matrix (pivot table) to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the matrix.
+        data_source : str
+            Name of the dataset.
+        rows : list of dict
+            Row grouping fields. Each: {"column": "col_name"}.
+        values : list of dict
+            Value fields. Each is either:
+            - {"measure": "MeasureName"} for a DAX measure
+            - {"column": "col_name", "aggregation": "Sum"} for a column
+        matrix_title : str, optional
+            Title displayed above the matrix.
+        columns : list of dict, optional
+            Column pivot fields. Each: {"column": "col_name"}.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.matrix import _Matrix
+
+        matrix = _Matrix(self,
+                         visual_id=visual_id,
+                         data_source=data_source,
+                         visual_title=matrix_title,
+                         rows=rows,
+                         values=values,
+                         columns=columns,
+                         x_position=x_position,
+                         y_position=y_position,
+                         height=height,
+                         width=width,
+                         tab_order=tab_order,
+                         z_position=z_position,
+                         parent_group_id=parent_group_id,
+                         alt_text=alt_text,
+                         background_color=background_color,
+                         background_color_alpha=background_color_alpha,
+                         title_font_color=title_font_color,
+                         title_font_family=title_font_family,
+                         title_bold=title_bold,
+                         border_color=border_color,
+                         border_width=border_width)
+
+        self.visuals.append(matrix)
+        return matrix
