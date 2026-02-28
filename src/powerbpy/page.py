@@ -842,3 +842,228 @@ class _Page:
 
         self.visuals.append(table)
         return table
+
+    # pylint: disable=too-many-arguments
+    def add_treemap(self,
+                    *,
+                    visual_id,
+                    data_source,
+                    treemap_title,
+                    group_var,
+                    value_var,
+                    value_aggregation_type,
+                    x_position,
+                    y_position,
+                    height,
+                    width,
+                    detail_var=None,
+                    show_data_labels=False,
+                    background_color="#FFFFFF",
+                    background_color_alpha=None,
+                    tab_order=-1001,
+                    z_position=6000,
+                    parent_group_id=None,
+                    alt_text="A treemap",
+                    title_font_color=None,
+                    title_font_family=None,
+                    title_bold=None,
+                    border_color=None,
+                    border_width=None):
+
+        '''Add a treemap to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the treemap.
+        data_source : str
+            Name of the dataset.
+        treemap_title : str
+            Title displayed above the treemap.
+        group_var : str
+            Column name for the grouping category (rectangle sizes).
+        value_var : str
+            Column name for the value to aggregate.
+        value_aggregation_type : str
+            Aggregation: "Sum", "Average", "DistinctCount", etc.
+        detail_var : str, optional
+            Column for sub-category drill-down within groups.
+        show_data_labels : bool
+            Show value labels on rectangles. Default False.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.treemap import _Treemap
+
+        treemap = _Treemap(self,
+                    visual_id=visual_id,
+                    data_source=data_source,
+                    visual_title=treemap_title,
+                    group_var=group_var,
+                    value_var=value_var,
+                    value_aggregation_type=value_aggregation_type,
+                    x_position=x_position,
+                    y_position=y_position,
+                    height=height,
+                    width=width,
+                    tab_order=tab_order,
+                    z_position=z_position,
+                    parent_group_id=parent_group_id,
+                    alt_text=alt_text,
+                    background_color=background_color,
+                    background_color_alpha=background_color_alpha,
+                    detail_var=detail_var,
+                    show_data_labels=show_data_labels,
+                    title_font_color=title_font_color,
+                    title_font_family=title_font_family,
+                    title_bold=title_bold,
+                    border_color=border_color,
+                    border_width=border_width)
+
+        self.visuals.append(treemap)
+        return treemap
+
+    # pylint: disable=too-many-arguments
+    def add_gauge(self,
+                  *,
+                  visual_id,
+                  data_source,
+                  measure_name,
+                  gauge_title=None,
+                  target_measure=None,
+                  min_value=None,
+                  max_value=None,
+                  x_position,
+                  y_position,
+                  height,
+                  width,
+                  background_color=None,
+                  background_color_alpha=None,
+                  tab_order=-1001,
+                  z_position=6000,
+                  parent_group_id=None,
+                  alt_text="A gauge",
+                  title_font_color=None,
+                  title_font_family=None,
+                  title_bold=None,
+                  border_color=None,
+                  border_width=None):
+
+        '''Add a gauge to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the gauge.
+        data_source : str
+            Name of the dataset containing the measures.
+        measure_name : str
+            DAX measure name for the gauge value.
+        gauge_title : str, optional
+            Title displayed above the gauge.
+        target_measure : str, optional
+            DAX measure name for the target line.
+        min_value : str, optional
+            DAX measure name for gauge minimum.
+        max_value : str, optional
+            DAX measure name for gauge maximum.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.gauge import _Gauge
+
+        gauge = _Gauge(self,
+                  visual_id=visual_id,
+                  data_source=data_source,
+                  visual_title=gauge_title,
+                  measure_name=measure_name,
+                  x_position=x_position,
+                  y_position=y_position,
+                  height=height,
+                  width=width,
+                  tab_order=tab_order,
+                  z_position=z_position,
+                  parent_group_id=parent_group_id,
+                  alt_text=alt_text,
+                  background_color=background_color,
+                  background_color_alpha=background_color_alpha,
+                  target_measure=target_measure,
+                  min_value=min_value,
+                  max_value=max_value,
+                  title_font_color=title_font_color,
+                  title_font_family=title_font_family,
+                  title_bold=title_bold,
+                  border_color=border_color,
+                  border_width=border_width)
+
+        self.visuals.append(gauge)
+        return gauge
+
+    # pylint: disable=too-many-arguments
+    def add_multi_row_card(self,
+                           *,
+                           visual_id,
+                           data_source,
+                           fields,
+                           card_title=None,
+                           x_position,
+                           y_position,
+                           height,
+                           width,
+                           background_color=None,
+                           background_color_alpha=None,
+                           tab_order=-1001,
+                           z_position=6000,
+                           parent_group_id=None,
+                           alt_text="A multi-row card",
+                           title_font_color=None,
+                           title_font_family=None,
+                           title_bold=None,
+                           border_color=None,
+                           border_width=None):
+
+        '''Add a multi-row card to a page
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique id for the multi-row card.
+        data_source : str
+            Name of the dataset.
+        fields : list of dict
+            Fields to display. Each dict is either:
+            - {"measure": "MeasureName"} for a DAX measure
+            - {"column": "col_name", "aggregation": "Sum"} for a column
+        card_title : str, optional
+            Title displayed above the card.
+        x_position, y_position, height, width : int
+            Position and size on the page.
+        '''
+
+        from powerbpy.multi_row_card import _MultiRowCard
+
+        multi_row_card = _MultiRowCard(self,
+                           visual_id=visual_id,
+                           data_source=data_source,
+                           visual_title=card_title,
+                           fields=fields,
+                           x_position=x_position,
+                           y_position=y_position,
+                           height=height,
+                           width=width,
+                           tab_order=tab_order,
+                           z_position=z_position,
+                           parent_group_id=parent_group_id,
+                           alt_text=alt_text,
+                           background_color=background_color,
+                           background_color_alpha=background_color_alpha,
+                           title_font_color=title_font_color,
+                           title_font_family=title_font_family,
+                           title_bold=title_bold,
+                           border_color=border_color,
+                           border_width=border_width)
+
+        self.visuals.append(multi_row_card)
+        return multi_row_card
