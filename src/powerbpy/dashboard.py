@@ -446,6 +446,83 @@ class Dashboard:
         self.datasets.append(dataset)
         return dataset
 
+
+    def add_web_json(self,
+                     table_name,
+                     url,
+                     sample_csv,
+                     type_transforms=None,
+                     encoding="utf-8"):
+
+        '''Add a JSON API endpoint as a data source.
+
+        Connects the dashboard to a REST API that returns a JSON array of
+        objects. Power BI will call the API at each refresh. On first open,
+        PBI Desktop prompts for credentials (Basic auth, OAuth2, API Key, etc.)
+        which are then stored securely in the PBI credential manager.
+
+        A sample CSV file is required for column type detection. The CSV data
+        is NOT included in the dashboard — only used to infer the schema.
+
+        Parameters
+        ----------
+        table_name : str
+            Name for the table in the Power BI data model.
+        url : str
+            Full API endpoint URL. Must return a JSON array of objects.
+        sample_csv : str
+            Path to a sample CSV file for column type detection.
+        type_transforms : list of dict, optional
+            Custom M code type transform steps. Each dict has:
+            - "step_name": str — M code variable name (e.g. "TypedDates")
+            - "columns": list of {"name": str, "type": str} where type is
+              a Power Query type string (e.g. "type number", "type datetimezone")
+            If not provided, transforms are auto-generated from CSV column types.
+        encoding : str
+            Encoding for reading the sample CSV. Default "utf-8".
+
+        Returns
+        -------
+        dataset : _WebJson
+            The dataset instance. Use `.add_measure()` to add DAX measures.
+
+        Examples
+        --------
+        >>> ds = db.add_web_json(
+        ...     table_name="my_data",
+        ...     url="https://api.example.com/data?format=json",
+        ...     sample_csv="data/sample.csv",
+        ... )
+        >>> ds.add_measure("Total Rows", "COUNTROWS('my_data')", "#,0")
+
+        >>> # With custom type transforms
+        >>> ds = db.add_web_json(
+        ...     table_name="survey",
+        ...     url="https://server.surveycto.com/api/v2/forms/data/wide/json/form?date=0",
+        ...     sample_csv="data/survey_sample.csv",
+        ...     type_transforms=[{
+        ...         "step_name": "TypedDates",
+        ...         "columns": [
+        ...             {"name": "SubmissionDate", "type": "type datetimezone"},
+        ...             {"name": "starttime", "type": "type datetimezone"},
+        ...         ]
+        ...     }],
+        ... )
+        '''
+
+        from powerbpy.dataset_web_json import _WebJson
+
+        dataset = _WebJson(self,
+                           table_name=table_name,
+                           url=url,
+                           sample_csv_path=sample_csv,
+                           type_transforms=type_transforms,
+                           encoding=encoding)
+
+        self.datasets.append(dataset)
+        return dataset
+
+
     # pylint: disable=too-many-arguments
     def add_blob_csv(self,
                 *,
