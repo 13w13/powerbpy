@@ -325,13 +325,17 @@ class _DataSet:
         col_id = str(uuid.uuid4())
         summarize = "sum" if data_type == "double" else "none"
 
+        # Calculated columns: NO dataType (auto-inferred by PBI engine).
+        # Structure reverse-engineered from PBI Desktop .pbip output.
         with open(self.dataset_file_path, 'a', encoding="utf-8") as file:
             file.write(f"\n\tcolumn '{name}' = {expression}\n")
-            file.write(f"\t\tdataType: {data_type}\n")
             if format_string is not None:
                 file.write(f"\t\tformatString: {format_string}\n")
             file.write(f"\t\tlineageTag: {col_id}\n")
             file.write(f"\t\tsummarizeBy: {summarize}\n\n")
+            file.write(f"\t\tannotation SummarizationSetBy = Automatic\n\n")
+            if data_type == "double":
+                file.write('\t\tannotation PBI_FormatHint = {"isGeneralNumber":true}\n\n')
 
 
     # Patterns that indicate a column is a unique identifier / key
