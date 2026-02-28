@@ -144,28 +144,22 @@ class _Table(_Visual):
         # Adjust column widths if provided
         if column_widths:
             for col_name, col_width in column_widths.items():
-                for col_width_entry in self.visual_json.get("visual", {}) \
-                                                                 .get("objects", {}) \
-                                                                 .get("columnWidth", []):
-
-                    col_width_entry.append(
-
-                {
-                    "properties": {
-                        "value": {
-                            "expr": {
-                                "Literal": {
-                                    "Value": f"{col_width}D"
+                self.visual_json["visual"]["objects"]["columnWidth"].append(
+                    {
+                        "properties": {
+                            "value": {
+                                "expr": {
+                                    "Literal": {
+                                        "Value": f"{col_width}D"
+                                    }
                                 }
                             }
+                        },
+                        "selector": {
+                            "metadata": f"{data_source}.{col_name}"
                         }
-                    },
-                    "selector": {
-                        "metadata": f"{data_source}.{col_name}"
                     }
-                }
-
-            )
+                )
 
         # Add a totals row if the user asks for it
         if add_totals_row is True:
