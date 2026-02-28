@@ -379,7 +379,10 @@ class _Page:
                background_color = None,
                parent_group_id = None,
                alt_text= "A slicer",
-                 background_color_alpha=None):
+                 background_color_alpha=None,
+                 slicer_mode="Basic",
+                 orientation="vertical",
+                 single_select=False):
 
         '''Add a slicer to a page
 
@@ -433,7 +436,10 @@ class _Page:
                parent_group_id=parent_group_id,
                alt_text = alt_text,
                  background_color=background_color,
-                 background_color_alpha=background_color_alpha)
+                 background_color_alpha=background_color_alpha,
+                 slicer_mode=slicer_mode,
+                 orientation=orientation,
+                 single_select=single_select)
 
         self.visuals.append(slicer)
         return slicer

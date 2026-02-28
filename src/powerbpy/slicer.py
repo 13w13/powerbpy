@@ -32,7 +32,10 @@ class _Slicer(_Visual):
                background_color,
                background_color_alpha,
                parent_group_id,
-               alt_text = "A slicer"):
+               alt_text = "A slicer",
+               slicer_mode = "Basic",
+               orientation = "vertical",
+               single_select = False):
 
         '''Add a slicer to a page
 
@@ -125,13 +128,14 @@ class _Slicer(_Visual):
         }
 
         ## objects
+        # F2: slicer_mode — "Basic" (list), "Dropdown", "Tile", "Between" (date range)
         self.visual_json["visual"]["objects"]["data"] = [
                 {
                     "properties": {
                         "mode": {
                             "expr": {
                                 "Literal": {
-                                    "Value": "'Basic'"
+                                    "Value": f"'{slicer_mode}'"
                                 }
                             }
                         }
@@ -146,7 +150,7 @@ class _Slicer(_Visual):
                         "orientation": {
                             "expr": {
                                 "Literal": {
-                                    "Value": "1D"
+                                    "Value": "1D" if orientation == "horizontal" else "0D"
                                 }
                             }
                         },
@@ -160,35 +164,7 @@ class _Slicer(_Visual):
                                         "Type": 0
                                     }
                                 ],
-                                "Where": [
-                                    {
-                                        "Condition": {
-                                            "In": {
-                                                "Expressions": [
-                                                    {
-                                                        "Column": {
-                                                            "Expression": {
-                                                                "SourceRef": {
-                                                                    "Source": "w"
-                                                                }
-                                                            },
-                                                            "Property": column_name
-                                                        }
-                                                    }
-                                                ],
-                                                "Values": [
-                                                    [
-                                                        {
-                                                            "Literal": {
-                                                                "Value": "'Click on any other button to get rid of this extra button'"
-                                                            }
-                                                        }
-                                                    ]
-                                                ]
-                                            }
-                                        }
-                                    }
-                                ]
+                                "Where": []
                             }
                         }
                     }
@@ -198,13 +174,14 @@ class _Slicer(_Visual):
 
         ]
 
+        # F4: single_select — True = one value only, False = multi-select
         self.visual_json["visual"]["objects"]["selection"] = [
                 {
                     "properties": {
                         "singleSelect": {
                             "expr": {
                                 "Literal": {
-                                    "Value": "false"
+                                    "Value": "true" if single_select else "false"
                                 }
                             }
                         },
