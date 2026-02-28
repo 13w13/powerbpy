@@ -447,6 +447,61 @@ class Dashboard:
         return dataset
 
 
+    def add_web_csv(self,
+                    table_name,
+                    url,
+                    sample_csv,
+                    encoding="utf-8"):
+
+        '''Add a CSV API endpoint as a data source.
+
+        Generates Csv.Document(Web.Contents(url)) M code — the exact
+        same pattern Power BI Desktop produces when using Get Data → Web
+        on a CSV endpoint. This is the most reliable way to connect PBI
+        to a web-hosted CSV (e.g. SurveyCTO datasets API).
+
+        A sample CSV file is required for column type detection. The CSV
+        data is NOT included in the dashboard — only used to infer the
+        schema (column names, types, count).
+
+        Parameters
+        ----------
+        table_name : str
+            Name for the table in the Power BI data model.
+        url : str
+            Full API endpoint URL. Must return CSV data.
+        sample_csv : str
+            Path to a sample CSV file for column type detection.
+        encoding : str
+            Encoding for the sample CSV and PQ encoding param. Default "utf-8".
+
+        Returns
+        -------
+        dataset : _WebCsv
+            The dataset instance. Use `.add_measure()` to add DAX measures.
+
+        Examples
+        --------
+        >>> ds = db.add_web_csv(
+        ...     table_name="assessment",
+        ...     url="https://server.surveycto.com/api/v2/datasets/data/csv/my_dataset",
+        ...     sample_csv="data/sample.csv",
+        ... )
+        >>> ds.add_measure("Total Rows", "COUNTROWS('assessment')", "#,0")
+        '''
+
+        from powerbpy.dataset_web_json import _WebCsv
+
+        dataset = _WebCsv(self,
+                          table_name=table_name,
+                          url=url,
+                          sample_csv_path=sample_csv,
+                          encoding=encoding)
+
+        self.datasets.append(dataset)
+        return dataset
+
+
     def add_web_json(self,
                      table_name,
                      url,

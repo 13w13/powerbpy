@@ -1,23 +1,100 @@
-'''Dataset class for JSON API sources (Web.Contents + Json.Document).
+'''Dataset classes for web-based data sources.
 
-Connects Power BI to any REST API that returns a JSON array of objects.
-Uses a sample CSV for column type detection, but generates M code that
-fetches data from the API URL at refresh time.
+Two classes:
+- _WebCsv: for APIs returning CSV (e.g. SurveyCTO /datasets/data/csv/)
+  Uses Csv.Document(Web.Contents(url)) — same pattern PBI Desktop generates.
+- _WebJson: for APIs returning JSON arrays (e.g. SurveyCTO /forms/data/wide/json/)
+  Uses Json.Document(Web.Contents(url)) with record expansion.
 
 Authentication is handled by Power BI's credential manager — on first
 refresh, PBI Desktop prompts for credentials (Basic, OAuth2, API Key, etc.).
 
-You should never call this class directly; use Dashboard.add_web_json().
+You should never call these classes directly; use Dashboard.add_web_csv()
+or Dashboard.add_web_json().
 '''
 
-import uuid
+import os
 
 import pandas as pd  # pylint: disable=import-error
 
 from powerbpy.data_set import _DataSet
+from powerbpy.dataset_csv import _ENCODING_CODES
+
+
+class _WebCsv(_DataSet):
+    '''Dataset connected to a CSV API endpoint.
+
+    Generates Csv.Document(Web.Contents(url)) M code — the exact same
+    pattern Power BI Desktop produces when you use Get Data → Web on a
+    CSV endpoint. Reuses the same Promoted Headers / Changed Type steps
+    as local CSV files.
+    '''
+
+    # pylint: disable=too-many-arguments
+
+    def __init__(self,
+                 dashboard,
+                 table_name,
+                 url,
+                 sample_csv_path,
+                 encoding="utf-8"):
+        '''Create a dataset connected to a CSV API endpoint.
+
+        Parameters
+        ----------
+        dashboard : Dashboard
+            The parent dashboard instance.
+        table_name : str
+            Name for the table in the Power BI model.
+        url : str
+            Full API endpoint URL. Must return CSV data.
+        sample_csv_path : str
+            Path to a sample CSV for column type detection.
+            The CSV data is NOT included in the dashboard.
+        encoding : str
+            Encoding for reading the sample CSV and for the PQ encoding
+            parameter. Default "utf-8".
+        '''
+
+        # Build a fake path so _DataSet derives dataset_name = table_name
+        fake_path = os.path.join(
+            os.path.dirname(os.path.abspath(sample_csv_path)),
+            f"{table_name}.csv"
+        )
+        super().__init__(dashboard, fake_path)
+
+        self.url = url
+        self.pq_encoding = _ENCODING_CODES.get(encoding.lower(), 65001)
+
+        # Load sample CSV for column detection
+        self.dataset = pd.read_csv(sample_csv_path, encoding=encoding)
+
+        # Build TMDL column definitions (reuses parent's method)
+        self._create_tmdl()
+
+        # Write M code — same as _LocalCsv but Web.Contents instead of File.Contents
+        replacement_values = '", "'.join(self.col_attributes["col_names"])
+        formatted_column_details = ', '.join(map(str, self.col_attributes["col_deets"]))
+
+        with open(self.dataset_file_path, 'a', encoding="utf-8") as file:
+            file.write(f'\tpartition {self.dataset_name} = m\n')
+            file.write('\t\tmode: import\n\t\tsource =\n\t\t\t\tlet\n')
+            file.write(f'\t\t\t\t\tSource = Csv.Document(Web.Contents("{self.url}"),'
+                        f'[Delimiter=",", Columns={len(self.dataset.columns)}, '
+                        f'Encoding={self.pq_encoding}, QuoteStyle=QuoteStyle.Csv]),\n')
+            file.write('\t\t\t\t\t#"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),\n')
+            file.write(f'\t\t\t\t\t#"Replaced Value" = Table.ReplaceValue(#"Promoted Headers","NA",null,Replacer.ReplaceValue,{{"{ replacement_values  }"}}),\n')
+            file.write(f'\t\t\t\t\t#"Changed Type" = Table.TransformColumnTypes(#"Replaced Value",{{  {  formatted_column_details  }   }})\n')
+            file.write('\t\t\t\tin\n\t\t\t\t\t#"Changed Type"\n\n')
+            file.write('\tannotation PBI_ResultType = Table\n\n\tannotation PBI_NavigationStepName = Navigation\n\n')
 
 
 class _WebJson(_DataSet):
+    '''Dataset connected to a JSON API endpoint.
+
+    Generates Json.Document(Web.Contents(url)) M code with automatic
+    record expansion. Use for APIs that return a JSON array of objects.
+    '''
 
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-instance-attributes
@@ -36,24 +113,19 @@ class _WebJson(_DataSet):
         dashboard : Dashboard
             The parent dashboard instance.
         table_name : str
-            Name for the table in the Power BI model (e.g. "syr_rehab_assessment").
+            Name for the table in the Power BI model.
         url : str
             Full API endpoint URL. Must return a JSON array of objects.
-            Example: "https://server.surveycto.com/api/v2/forms/data/wide/json/form_id?date=0"
         sample_csv_path : str
-            Path to a sample CSV file used to detect column names and types.
-            The CSV is NOT included in the dashboard — only used for schema inference.
+            Path to a sample CSV for column type detection.
+            The CSV data is NOT included in the dashboard.
         type_transforms : list of dict, optional
             Custom M code type transforms applied after JSON expansion.
             Each dict: {"step_name": str, "columns": [{"name": str, "type": str}]}
-            where type is a Power Query type: "type number", "type text",
-            "type date", "type datetimezone", etc.
             If not provided, transforms are auto-generated from the sample CSV types.
         encoding : str
             Encoding for reading the sample CSV. Default "utf-8".
         '''
-
-        import os
 
         # Build a fake path so _DataSet derives dataset_name = table_name
         fake_path = os.path.join(
@@ -76,11 +148,7 @@ class _WebJson(_DataSet):
 
 
     def _auto_type_transforms(self):
-        '''Auto-generate M code type transform steps from pandas dtypes.
-
-        Returns a list of transform step dicts that can be written as M code.
-        Groups columns by target PQ type to minimize the number of steps.
-        '''
+        '''Auto-generate M code type transform steps from pandas dtypes.'''
         date_cols = []
         number_cols = []
 
@@ -90,7 +158,6 @@ class _WebJson(_DataSet):
                 date_cols.append(col)
             elif dtype in ("int64", "float64"):
                 number_cols.append(col)
-            # strings don't need transforms — PQ default is text
 
         transforms = []
         if date_cols:
