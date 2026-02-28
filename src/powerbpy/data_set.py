@@ -295,3 +295,77 @@ class _DataSet:
             if format_string is not None:
                 file.write(f"\t\tformatString: {format_string}\n")
             file.write(f"\t\tlineageTag: {measure_id}\n\n")
+
+
+    # Patterns that indicate a column is a unique identifier / key
+    _ID_PATTERNS = re.compile(
+        r'(?:^|_)(?:case|beneficiary|bnf|patient|client|household|hh|participant'
+        r'|respondent|submission|record|unique)[-_]?id$'
+        r'|^(?:caseid|bnf_id|hh_id|uid|uuid|KEY|key|_key|_id|id)$',
+        re.IGNORECASE,
+    )
+
+    def auto_measures(self):
+        '''Auto-detect ID/key columns and generate DISTINCTCOUNT measures.
+
+        Scans the dataset for columns that look like unique identifiers
+        (based on naming patterns and uniqueness ratio) and creates
+        a DISTINCTCOUNT measure for each. Also creates a COUNTROWS
+        measure for the table ("Total Rows").
+
+        Detection rules:
+        1. Column name matches common ID patterns (caseid, KEY, *_id, etc.)
+        2. Column is text type (object dtype)
+        3. Values are mostly unique (distinct/total ratio > 0.5)
+
+        Returns
+        -------
+        list[str]
+            Names of the measures that were created.
+
+        Examples
+        --------
+        >>> dataset = dashboard.add_local_csv("beneficiaries.csv")
+        >>> created = dataset.auto_measures()
+        >>> print(created)
+        ['Total Rows', 'Unique caseid']
+        '''
+
+        # pylint: disable=no-member
+        created = []
+
+        # Always add a COUNTROWS measure
+        row_measure = "Total Rows"
+        self.add_measure(row_measure, f"COUNTROWS('{self.dataset_name}')", "#,0")
+        created.append(row_measure)
+
+        # Scan columns for ID patterns
+        for col in self.dataset.columns:
+            # Check 1: name pattern
+            if not self._ID_PATTERNS.search(col):
+                continue
+
+            # Check 2: text type (IDs are almost always strings)
+            if self.dataset[col].dtype != "object":
+                continue
+
+            # Check 3: mostly unique values (>50% distinct)
+            n_total = len(self.dataset[col].dropna())
+            if n_total == 0:
+                continue
+            n_distinct = self.dataset[col].nunique()
+            if n_distinct / n_total < 0.5:
+                continue
+
+            # Generate measure name: "Unique {col}" cleaned up
+            clean = col.replace("_", " ").strip()
+            measure_name = f"Unique {clean}"
+
+            self.add_measure(
+                measure_name,
+                f"DISTINCTCOUNT('{self.dataset_name}'[{col}])",
+                "#,0",
+            )
+            created.append(measure_name)
+
+        return created
