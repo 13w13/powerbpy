@@ -1,5 +1,54 @@
-# Power Bpy <a id="hex-sticker" href="https://russell-shean.github.io/powerbpy/"><img src="https://github.com/user-attachments/assets/e372239d-5c28-4ed1-acf6-fb96a03b8a1a" align="right" height="240" /></a>  
-Do you wish you could build dashboards with code, but can't because the client specifically asked for Power BI or your employer only supports publishing Power BI? Do you love Power BI, but wish there was a way to automatically generate parts of your dashboard to speed up your development process?      
+# Power Bpy <a id="hex-sticker" href="https://russell-shean.github.io/powerbpy/"><img src="https://github.com/user-attachments/assets/e372239d-5c28-4ed1-acf6-fb96a03b8a1a" align="right" height="240" /></a>
+
+> **Fork note** — This is an extended fork of [Russell-Shean/powerbpy](https://github.com/Russell-Shean/powerbpy).
+>
+> **Why this fork?** This is a quick experimental side quest. Many teams have a backlog of Power BI reports to build but limited analyst capacity. By combining powerbpy with LLM-assisted coding, we can increase the speed of report creation — describe what you need, generate the script, open in Power BI Desktop, polish. To make this workflow practical, powerbpy needed more visual types, formatting control, and data modeling primitives, which is what this fork adds.
+>
+> **What's next:** Packaging this as a reusable skill or [MCP server](https://modelcontextprotocol.io/) so any team can generate Power BI dashboards from a CSV and a prompt. Or maybe just automating ourselves out of a job — time to consider farm life. 🌾
+>
+> Core PRs have been submitted upstream ([#29](https://github.com/Russell-Shean/powerbpy/pull/29), [#30](https://github.com/Russell-Shean/powerbpy/pull/30), [#31](https://github.com/Russell-Shean/powerbpy/pull/31), [#32](https://github.com/Russell-Shean/powerbpy/pull/32)).
+>
+> Install from this fork:
+> ```bash
+> pip install git+https://github.com/13w13/powerbpy.git
+> ```
+
+### Fork features
+
+**New visual types**
+
+| Method | Visual | Notes |
+|--------|--------|-------|
+| `add_treemap()` | Treemap | Group + value + optional detail drill-down |
+| `add_gauge()` | Gauge | Measure + target + min/max (all DAX measures) |
+| `add_multi_row_card()` | Multi-Row Card | Mix of measures and column aggregations |
+| `add_scatter()` | Scatter / Bubble | X/Y measures + optional category + size |
+| `add_matrix()` | Matrix (Pivot Table) | Rows + columns + values (measures or aggregations) |
+| `add_kpi()` | KPI | Indicator + goal + trend line |
+
+**New chart types** (via `chart_type` param on `add_chart()`): `lineChart`, `areaChart`, `pieChart`, `donutChart`, `funnel`, `waterfallChart`, `ribbonChart`, `hundredPercentStackedColumnChart`, `hundredPercentStackedBarChart`
+
+**Formatting & styling**
+- `show_data_labels`, `bar_color`, `axis_start` on charts
+- `legend_var`, `legend_position` for multi-series / stacked charts
+- `sort_direction`, `sort_by` for chart sorting
+- `slicer_mode` (`"Dropdown"`, `"Tile"`, `"Basic"`), `orientation`, `single_select` on slicers
+- `title_font_color`, `title_font_family`, `title_bold` on all visuals
+- `border_color`, `border_width` on all visuals
+
+**Data modeling**
+- `add_measure(name, expression, format_string)` — DAX measures on any dataset
+- `auto_measures()` — auto-detects ID columns and generates `DISTINCTCOUNT` measures
+- `add_column(name, expression, data_type)` — calculated columns (DAX) in TMDL
+- `add_relationship(from_table, from_col, to_table, to_col)` — relationships in `relationships.tmdl`
+- `set_theme(name, data_colors, ...)` — custom theme JSON + report.json binding
+- `new_tooltip_page(name)` — tooltip pages + `tooltip_page` param on any visual
+
+**Bug fixes** — chart aggregation on Y axis, `.platform` displayName, CSV encoding (configurable, default UTF-8), lazy imports, f-string syntax, table `column_widths`
+
+---
+
+Do you wish you could build dashboards with code, but can't because the client specifically asked for Power BI or your employer only supports publishing Power BI? Do you love Power BI, but wish there was a way to automatically generate parts of your dashboard to speed up your development process?
 
 Introducing Power Bpy, a python package that lets you create Power BI dashboards using python. Dashboards created using these functions can be opened, edited and saved normally in Power BI desktop. Power Bpy uses the new .pbip/.pbir format which stores dashboards as directories of text files instead of binary files letting you version control your dashboards!       
 
