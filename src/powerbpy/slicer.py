@@ -35,7 +35,9 @@ class _Slicer(_Visual):
                alt_text = "A slicer",
                slicer_mode = "Basic",
                orientation = "vertical",
-               single_select = False):
+               single_select = False,
+               select_all = True,
+               sync_group = None):
 
         '''Add a slicer to a page
 
@@ -73,6 +75,10 @@ class _Slicer(_Visual):
             Hex code for the background color of the slicer. Defaults to None (transparent)
         parent_group_id: str
             This should be a valid id code for another power BI visual. If supplied the current visual will be nested inside the parent group.
+        sync_group: str
+            Optional sync group name. All slicers sharing the same sync_group name will be
+            synchronized across pages — selecting a value in one will filter all others.
+            The slicers must reference the same table.entity and column to sync correctly.
 
         Notes
         ------
@@ -129,72 +135,102 @@ class _Slicer(_Visual):
 
         ## objects
         # F2: slicer_mode — "Basic" (list), "Dropdown", "Tile", "Between" (date range)
-        self.visual_json["visual"]["objects"]["data"] = [
-                {
-                    "properties": {
-                        "mode": {
-                            "expr": {
-                                "Literal": {
-                                    "Value": f"'{slicer_mode}'"
-                                }
-                            }
-                        }
+        data_props = {
+            "mode": {
+                "expr": {
+                    "Literal": {
+                        "Value": f"'{slicer_mode}'"
                     }
                 }
-            ]
+            }
+        }
+        # F5: isInvertedSelectionMode — required for "Select All" behavior
+        if select_all:
+            data_props["isInvertedSelectionMode"] = {
+                "expr": {
+                    "Literal": {
+                        "Value": "true"
+                    }
+                }
+            }
+        self.visual_json["visual"]["objects"]["data"] = [
+            {"properties": data_props}
+        ]
 
         self.visual_json["visual"]["objects"]["general"] = [
-
             {
-                    "properties": {
-                        "orientation": {
-                            "expr": {
-                                "Literal": {
-                                    "Value": "1D" if orientation == "horizontal" else "0D"
-                                }
-                            }
-                        },
-                        "filter": {
-                            "filter": {
-                                "Version": 2,
-                                "From": [
-                                    {
-                                        "Name": "w",
-                                        "Entity": data_source,
-                                        "Type": 0
-                                    }
-                                ],
-                                "Where": []
+                "properties": {
+                    "orientation": {
+                        "expr": {
+                            "Literal": {
+                                "Value": "1D" if orientation == "horizontal" else "0D"
                             }
                         }
                     }
                 }
-
-
-
+            }
         ]
 
         # F4: single_select — True = one value only, False = multi-select
-        self.visual_json["visual"]["objects"]["selection"] = [
-                {
-                    "properties": {
-                        "singleSelect": {
-                            "expr": {
-                                "Literal": {
-                                    "Value": "true" if single_select else "false"
-                                }
-                            }
-                        },
-                        "strictSingleSelect": {
-                            "expr": {
-                                "Literal": {
-                                    "Value": "true"
-                                }
-                            }
-                        }
+        # F5: select_all — True = show "Select All" checkbox (default)
+        selection_props = {
+            "singleSelect": {
+                "expr": {
+                    "Literal": {
+                        "Value": "true" if single_select else "false"
                     }
                 }
+            },
+            "strictSingleSelect": {
+                "expr": {
+                    "Literal": {
+                        "Value": "true" if single_select else "false"
+                    }
+                }
+            }
+        }
+        if select_all and not single_select:
+            selection_props["selectAllCheckboxEnabled"] = {
+                "expr": {
+                    "Literal": {
+                        "Value": "true"
+                    }
+                }
+            }
+        self.visual_json["visual"]["objects"]["selection"] = [
+            {"properties": selection_props}
+        ]
+
+        # filterConfig — categorical filter for proper slicer behavior
+        self.visual_json["filterConfig"] = {
+            "filters": [
+                {
+                    "name": f"{visual_id}_filter",
+                    "field": {
+                        "Column": {
+                            "Expression": {
+                                "SourceRef": {
+                                    "Entity": data_source
+                                }
+                            },
+                            "Property": column_name
+                        }
+                    },
+                    "type": "Categorical"
+                }
             ]
+        }
+
+        # Sync group — synchronize slicer selections across pages
+        # All slicers with the same groupName are linked (same table + column required)
+        if sync_group is not None:
+            self.visual_json["visual"]["syncGroup"] = {
+                "groupName": sync_group,
+                "fieldChanges": True,
+                "filterChanges": True
+            }
+            # Upgrade schema to 2.6.0 (required for syncGroup support)
+            self.visual_json["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json"
 
         # Write out the new json
         with open(self.visual_json_path, "w", encoding="utf-8") as file:

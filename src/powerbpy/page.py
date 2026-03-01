@@ -408,7 +408,9 @@ class _Page:
                  background_color_alpha=None,
                  slicer_mode="Basic",
                  orientation="vertical",
-                 single_select=False):
+                 single_select=False,
+                 select_all=True,
+                 sync_group=None):
 
         '''Add a slicer to a page
 
@@ -439,7 +441,13 @@ class _Page:
         parent_group_id : str
             This should be a valid id code for another Power BI visual. If supplied the current visual will be nested inside the parent group.
         alt_text : str
-            Alternate text for the visualization can be provided as an argument. This is important for screen readers (accessibility) or if the visualization doesn't load properly.   
+            Alternate text for the visualization can be provided as an argument. This is important for screen readers (accessibility) or if the visualization doesn't load properly.
+        select_all : bool
+            Show "Select All" checkbox and enable inverted selection mode. Defaults to True.
+        sync_group : str
+            Optional sync group name. All slicers sharing the same sync_group will be
+            synchronized across pages — selecting a value in one filters all others.
+            Slicers must reference the same table and column to sync correctly.
 
         Notes
         ------
@@ -465,7 +473,9 @@ class _Page:
                  background_color_alpha=background_color_alpha,
                  slicer_mode=slicer_mode,
                  orientation=orientation,
-                 single_select=single_select)
+                 single_select=single_select,
+                 select_all=select_all,
+                 sync_group=sync_group)
 
         self.visuals.append(slicer)
         return slicer

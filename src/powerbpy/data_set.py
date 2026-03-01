@@ -173,7 +173,8 @@ class _DataSet:
                     #print(f"{col}: This column is probably a date!")
 
                     # change the data type in the panda dataframe
-                    self.dataset[col] = pd.to_datetime(self.dataset[col], format = "%Y-%m-%d")
+                    # Use errors='coerce' to handle mixed values (e.g., "0", "N/A" alongside dates)
+                    self.dataset[col] = pd.to_datetime(self.dataset[col], format = "%Y-%m-%d", errors='coerce')
                     break
 
         # loop through columns and write specs out to model file
