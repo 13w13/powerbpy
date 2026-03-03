@@ -840,6 +840,32 @@ class Dashboard:
             file.write(rel_block + "\n")
 
 
+    def _register_custom_visual(self, guid):
+        """Register a custom visual GUID in report.json if not already present.
+
+        Custom visuals (like Deneb or Sankey) must be listed in the
+        ``publicCustomVisuals`` array of report.json for Power BI Desktop
+        to load them when the .pbip project is opened.
+
+        Parameters
+        ----------
+        guid : str
+            The visual type identifier (e.g.
+            ``"deneb7E15AEF80B9E4D4F8E12924291ECE89A"``).
+        """
+
+        with open(self.report_json_path, "r", encoding="utf-8") as file:
+            report = json.load(file)
+
+        custom_visuals = report.setdefault("publicCustomVisuals", [])
+
+        if guid not in custom_visuals:
+            custom_visuals.append(guid)
+
+            with open(self.report_json_path, "w", encoding="utf-8") as file:
+                json.dump(report, file, indent=2)
+
+
     def set_theme(self,
                   name,
                   data_colors,

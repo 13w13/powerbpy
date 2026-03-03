@@ -682,6 +682,124 @@ class _Page:
         return shape_map
 
     # pylint: disable=too-many-arguments
+    def add_deneb(self,
+                  *,
+                  visual_id,
+                  data_source,
+                  spec,
+                  columns=None,
+                  measures=None,
+                  provider="vegaLite",
+                  vega_config=None,
+                  render_mode="svg",
+                  enable_tooltips=True,
+                  enable_context_menu=True,
+                  enable_highlight=True,
+                  enable_selection=True,
+                  selection_mode="simple",
+                  x_position,
+                  y_position,
+                  height,
+                  width,
+                  chart_title=None,
+                  chart_title_font_size=17,
+                  parent_group_id=None,
+                  background_color=None,
+                  background_color_alpha=None,
+                  title_font_color=None,
+                  title_font_family=None,
+                  title_bold=None,
+                  border_color=None,
+                  border_width=None,
+                  tooltip_page=None,
+                  tab_order=-1001,
+                  z_position=6000,
+                  alt_text="A Deneb visualization"):
+
+        '''Add a Deneb (Vega/Vega-Lite) visual to a page.
+
+        Parameters
+        ----------
+        visual_id : str
+            Unique identifier for this visual.
+        data_source : str
+            Name of the dataset to bind data from.
+        spec : dict
+            A Vega or Vega-Lite specification as a Python dictionary.
+        columns : list of str, optional
+            Column names from data_source to add to the Deneb data role.
+        measures : list of tuple, optional
+            Each tuple is (column_name, aggregation) where aggregation is
+            one of "Sum", "Count", "Min", "Max", "Average", "CountNonNull".
+        provider : str
+            "vegaLite" (default) or "vega".
+        vega_config : dict, optional
+            A Vega/Vega-Lite config object for theming.
+        render_mode : str
+            "svg" (default) or "canvas".
+        enable_tooltips : bool
+            Enable Power BI tooltip integration. Default True.
+        enable_context_menu : bool
+            Enable right-click context menu. Default True.
+        enable_highlight : bool
+            Enable cross-highlight support. Default True.
+        enable_selection : bool
+            Enable cross-filter/selection support. Default True.
+        selection_mode : str
+            "simple" (default) or "advanced".
+        chart_title : str, optional
+            Title shown above the visual.
+        chart_title_font_size : int
+            Font size for the title. Default 17.
+        x_position : int
+            X coordinate on the page (origin = top-left).
+        y_position : int
+            Y coordinate on the page (origin = top-left).
+        height : int
+            Height of the visual on the page.
+        width : int
+            Width of the visual on the page.
+        '''
+
+        from powerbpy.deneb import _Deneb
+
+        deneb = _Deneb(self,
+                       visual_id=visual_id,
+                       data_source=data_source,
+                       spec=spec,
+                       columns=columns,
+                       measures=measures,
+                       provider=provider,
+                       vega_config=vega_config,
+                       render_mode=render_mode,
+                       enable_tooltips=enable_tooltips,
+                       enable_context_menu=enable_context_menu,
+                       enable_highlight=enable_highlight,
+                       enable_selection=enable_selection,
+                       selection_mode=selection_mode,
+                       x_position=x_position,
+                       y_position=y_position,
+                       height=height,
+                       width=width,
+                       chart_title=chart_title,
+                       chart_title_font_size=chart_title_font_size,
+                       parent_group_id=parent_group_id,
+                       background_color=background_color,
+                       background_color_alpha=background_color_alpha,
+                       title_font_color=title_font_color,
+                       title_font_family=title_font_family,
+                       title_bold=title_bold,
+                       border_color=border_color,
+                       border_width=border_width,
+                       tooltip_page=tooltip_page,
+                       tab_order=tab_order,
+                       z_position=z_position,
+                       alt_text=alt_text)
+
+        self.visuals.append(deneb)
+        return deneb
+
+
     def add_sanky_chart(self,
                         *,
                          visual_id,
