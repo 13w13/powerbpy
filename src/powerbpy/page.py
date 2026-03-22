@@ -689,6 +689,7 @@ class _Page:
                   spec,
                   columns=None,
                   measures=None,
+                  dax_measures=None,
                   provider="vegaLite",
                   vega_config=None,
                   render_mode="svg",
@@ -728,9 +729,17 @@ class _Page:
             A Vega or Vega-Lite specification as a Python dictionary.
         columns : list of str, optional
             Column names from data_source to add to the Deneb data role.
+            The column name becomes the field name in your Vega spec.
+        dax_measures : list of str, optional
+            Names of DAX measures defined via ``dataset.add_measure()``.
+            Each name becomes the field name Deneb sees — use the same
+            string as the ``"field"`` in your Vega spec.  **Recommended
+            approach** — PBI always respects DAX measure names, unlike
+            aggregated columns where PBI may override the display name.
         measures : list of tuple, optional
-            Each tuple is (column_name, aggregation) where aggregation is
-            one of "Sum", "Count", "Min", "Max", "Average", "CountNonNull".
+            Legacy. Each tuple is (column_name, aggregation) or
+            (column_name, aggregation, display_name).  Prefer
+            ``dax_measures`` for reliable field naming.
         provider : str
             "vegaLite" (default) or "vega".
         vega_config : dict, optional
@@ -769,6 +778,7 @@ class _Page:
                        spec=spec,
                        columns=columns,
                        measures=measures,
+                       dax_measures=dax_measures,
                        provider=provider,
                        vega_config=vega_config,
                        render_mode=render_mode,

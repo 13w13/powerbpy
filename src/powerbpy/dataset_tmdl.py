@@ -82,6 +82,9 @@ class _Tmdl:
             # add the new tmdl file to the tables folder
             shutil.move(data_path, tmdl_dataset_path)
 
+            # update data_path to the new location (file was moved)
+            data_path = tmdl_dataset_path
+
 
         # dateset_name -----------------------------------------------------------------------------------------------
         # read the whole table.tmdl file in and make it a giant blob for regex

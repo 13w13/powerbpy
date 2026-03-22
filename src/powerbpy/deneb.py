@@ -39,6 +39,7 @@ class _Deneb(_Visual):
         spec,
         columns=None,
         measures=None,
+        dax_measures=None,
         provider="vegaLite",
         vega_config=None,
         render_mode="svg",
@@ -68,6 +69,33 @@ class _Deneb(_Visual):
     ):
         """Create a Deneb visual on a Power BI page.
 
+        Data binding
+        ------------
+        Power BI pre-aggregates data before sending it to Deneb.  The
+        visual receives a flat table where each row is a unique
+        combination of all dimension values, with measures already
+        aggregated.  This table is exposed to the Vega/Vega-Lite spec
+        as a named dataset called ``"dataset"``.
+
+        **Critical**: the ``"field"`` references in your Vega spec must
+        match the ``nativeQueryRef`` exactly:
+
+        - *columns* → ``nativeQueryRef`` = column name as-is
+        - *measures (3-tuple)* → ``nativeQueryRef`` = ``display_name``
+        - *measures (2-tuple)* → ``nativeQueryRef`` = ``"{agg} of {col}"``
+
+        Always prefer the 3-tuple form so field names are predictable.
+
+        Deneb auto-injects metadata fields: ``__row__`` (row index),
+        ``__selected__`` (``"on"``/``"off"``/``"neutral"`` for cross-
+        filter), and per-measure ``__highlight``/``__highlightStatus``/
+        ``__highlightComparator`` fields for cross-highlighting.
+
+        Do NOT re-aggregate in the spec (no ``"aggregate": "sum"`` in
+        encoding) — PBI already did it.  Transforms like ``aggregate``,
+        ``fold``, ``pivot``, ``window`` break cross-filter because they
+        destroy row context.
+
         Parameters
         ----------
         visual_id : str
@@ -77,9 +105,13 @@ class _Deneb(_Visual):
         spec : dict
             A Vega or Vega-Lite specification as a Python dictionary.
             This is serialised to JSON and stored inside the visual.
+            If ``"data"`` is not present, ``{"name": "dataset"}`` is
+            injected automatically so Deneb can read PBI data.
         columns : list of str, optional
             Column names from *data_source* to add to the Deneb "dataset"
-            data role.  These appear as grouping fields.
+            data role.  These appear as grouping dimensions.  The column
+            name becomes the ``nativeQueryRef`` — use the same string
+            as the ``"field"`` in your Vega spec.
         measures : list of tuple, optional
             Each element is a 2-tuple ``(column_name, aggregation)`` or a
             3-tuple ``(column_name, aggregation, display_name)``.
@@ -87,22 +119,31 @@ class _Deneb(_Visual):
             *aggregation* is one of ``"Sum"``, ``"Count"``, ``"Min"``,
             ``"Max"``, ``"Average"``, ``"CountNonNull"``.
 
-            *display_name* (optional) controls the ``nativeQueryRef`` —
-            i.e. the column name that Deneb sees in its dataset.  **Use
-            the same string as the ``field`` reference in your Vega
-            spec.**  If omitted, defaults to ``"{agg} of {column}"``.
+            *display_name* (3rd element) controls the ``nativeQueryRef``
+            — the field name Deneb sees.  **Use the same string as the
+            ``"field"`` reference in your Vega spec.**  If omitted
+            (2-tuple), defaults to ``"{agg} of {column}"``.
 
-            Note: Power BI Desktop localises aggregation names (e.g.
-            French PBI shows "Somme de Sales" instead of "Sum of Sales").
-            If your PBI Desktop is non-English, pass the localised name
-            as *display_name* so that the Vega spec field references
-            match what Deneb receives.
+            Note: Power BI Desktop may ignore the aggregation function
+            and ``nativeQueryRef`` from the projection, using the column's
+            ``summarizeBy`` from TMDL instead and generating its own
+            display name.  Prefer ``dax_measures`` for reliable naming.
+        dax_measures : list of str, optional
+            Names of DAX measures defined in *data_source* (via
+            ``dataset.add_measure()``).  Each name becomes both the
+            ``queryRef`` and ``nativeQueryRef`` — use the same string
+            as the ``"field"`` reference in your Vega spec.
+
+            This is the **recommended** approach for Deneb measures
+            because PBI always respects DAX measure names, unlike
+            aggregated columns where PBI may override the display name.
         provider : str
             ``"vegaLite"`` (default) or ``"vega"``.
         vega_config : dict, optional
             A Vega/Vega-Lite config object (theming, defaults).
         render_mode : str
-            ``"svg"`` (default) or ``"canvas"``.
+            ``"svg"`` (default, sharper) or ``"canvas"`` (faster, use
+            for >10K data points).
         enable_tooltips : bool
             Enable Power BI tooltip integration.  Default ``True``.
         enable_context_menu : bool
@@ -170,6 +211,7 @@ class _Deneb(_Visual):
                         },
                         "queryRef": f"{data_source}.{col}",
                         "nativeQueryRef": col,
+                        "active": True,
                     }
                 )
 
@@ -209,6 +251,25 @@ class _Deneb(_Visual):
                         },
                         "queryRef": f"{agg_type}({data_source}.{col_name})",
                         "nativeQueryRef": display_name,
+                        "active": True,
+                    }
+                )
+
+        if dax_measures:
+            for measure_name in dax_measures:
+                projections.append(
+                    {
+                        "field": {
+                            "Measure": {
+                                "Expression": {
+                                    "SourceRef": {"Entity": data_source}
+                                },
+                                "Property": measure_name,
+                            }
+                        },
+                        "queryRef": f"{data_source}.{measure_name}",
+                        "nativeQueryRef": measure_name,
+                        "active": True,
                     }
                 )
 
@@ -291,7 +352,7 @@ class _Deneb(_Visual):
             {
                 "properties": {
                     "version": {
-                        "expr": {"Literal": {"Value": "'1.8.2.0'"}}
+                        "expr": {"Literal": {"Value": "'1.9.0.0'"}}
                     }
                 }
             }
