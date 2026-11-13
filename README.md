@@ -1,5 +1,15 @@
 # Power Bpy <a id="hex-sticker" href="https://russell-shean.github.io/powerbpy/"><img src="https://github.com/user-attachments/assets/e372239d-5c28-4ed1-acf6-fb96a03b8a1a" align="right" height="240" /></a>
 
+> [!IMPORTANT]
+> **This fork is archived (November 2026) and no longer maintained.**
+>
+> It was a quick experiment in generating Power BI reports from Python with LLM-assisted coding. Better-maintained tools now cover that ground. If you want an agent to build Power BI reports or semantic models, look at these instead:
+>
+> - [microsoft/skills-for-fabric](https://github.com/microsoft/skills-for-fabric), Microsoft's agent skills for Fabric and Power BI authoring;
+> - [data-goblin/power-bi-agentic-development](https://github.com/data-goblin/power-bi-agentic-development), plugins for reports and semantic models.
+>
+> For the Python library itself, use the upstream project: [Russell-Shean/powerbpy](https://github.com/Russell-Shean/powerbpy).
+
 > **Fork note** — This is an extended fork of [Russell-Shean/powerbpy](https://github.com/Russell-Shean/powerbpy).
 >
 > **Why this fork?** This is a quick experimental side quest. Many teams have a backlog of Power BI reports to build but limited analyst capacity. By combining powerbpy with LLM-assisted coding, we can increase the speed of report creation — describe what you need, generate the script, open in Power BI Desktop, polish. To make this workflow practical, powerbpy needed more visual types, formatting control, and data modeling primitives, which is what this fork adds.
